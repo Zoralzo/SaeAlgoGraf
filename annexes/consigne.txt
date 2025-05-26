@@ -1,0 +1,12 @@
+Création d'un cadrage (x,y) pour l'ensemble des produit a la fin de la première application il nous faut un fichier avec les position de tout les produit. 
+
+l'utilisateur voit le plan
+avec un curseur il vas zoom / dezoom le quadrillage 
+quand il clique sur validé ca crée le tableaux dans le modèle de donnée 
+pour ensuite rangée les article (drag and drop ) 
+crée un fichier quand il a fini --> fichier pour l'application 2  
+
+
+Dans la 2ème application : crée un chemin optimiser en fonction de la liste de course de l'utilisateur 
+
+
