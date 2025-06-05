@@ -1,5 +1,10 @@
 # supermarche/controleur.py
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
+import sys
+from PyQt6.QtWidgets import QApplication
+from ModeleDonnees import ModeleDonnees
+from vueArticle import vueArticle
+
 
 # -----------------------------------------------------------------------------
 # --- class controleur
@@ -29,3 +34,20 @@ class Controleur:
     def exporter_positions(self):
         self.modele.exporter_positions()
         QMessageBox.information(None, "Export", "Les positions ont été exportées dans produits_positions.json")
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+
+    # Initialisation du modèle
+    modele = ModeleDonnees("annexes/liste_produits.json")
+
+    # Création du contrôleur avec le modèle
+    controleur = Controleur(modele)
+
+    # Création de la fenêtre principale avec le contrôleur
+    fenetre = vueArticle(controleur)
+    fenetre.show()
+
+    sys.exit(app.exec())
+
