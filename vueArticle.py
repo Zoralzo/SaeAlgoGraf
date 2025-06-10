@@ -25,7 +25,7 @@ class vueArticle(QWidget):
         pixmap = QPixmap(chemin_image)
 
         if pixmap.isNull():
-            print("⚠️ Erreur : plan.jpg introuvable à", chemin_image)
+            print(" Erreur : plan.jpg introuvable à", chemin_image)
             pixmap = QPixmap(800, 600)
             pixmap.fill(Qt.GlobalColor.lightGray)
 
