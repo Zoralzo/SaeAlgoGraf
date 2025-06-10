@@ -1,14 +1,16 @@
 import os
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QGraphicsPixmapItem
-from PyQt6.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout, QPushButton, QSlider
-from PyQt6.QtCore import Qt, QPointF, QEvent
+from PyQt6.QtWidgets import (
+    QGraphicsPixmapItem, QWidget, QGraphicsView, QGraphicsScene,
+    QVBoxLayout, QPushButton, QSlider, QHBoxLayout, QListWidget,
+    QLabel, QMessageBox
+)
+from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtGui import QPainter, QColor, QPen
 
 # -----------------------------------------------------------------------------
-# --- class vue
+# --- class VueArticle
 # -----------------------------------------------------------------------------
-
 
 class vueArticle(QWidget):
     def __init__(self, controleur):
@@ -19,16 +21,14 @@ class vueArticle(QWidget):
         self.scene = QGraphicsScene()
         self.view = QGraphicsView(self.scene)
 
-        # Chargement sécurisé de l'image plan.jpg dans le sous-dossier annexes
         chemin_image = os.path.join(os.path.dirname(__file__), "annexes", "plan.jpg")
         pixmap = QPixmap(chemin_image)
 
         if pixmap.isNull():
             print("⚠️ Erreur : plan.jpg introuvable à", chemin_image)
-            # Optionnel : gérer le cas sans image, par exemple une image vide ou placeholder
-            pixmap = QPixmap(800, 600)  # taille arbitraire
+            pixmap = QPixmap(800, 600)
             pixmap.fill(Qt.GlobalColor.lightGray)
-        
+
         self.plan_item = QGraphicsPixmapItem(pixmap)
         self.scene.addItem(self.plan_item)
 
@@ -36,29 +36,51 @@ class vueArticle(QWidget):
         self.view.setMouseTracking(True)
         self.view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
-        # Zoom
         self.slider_zoom = QSlider(Qt.Orientation.Horizontal)
         self.slider_zoom.setMinimum(1)
         self.slider_zoom.setMaximum(300)
         self.slider_zoom.setValue(100)
         self.slider_zoom.valueChanged.connect(self.zoom_changed)
 
-        # Bouton valider
         self.bouton_valider = QPushButton("Valider")
         self.bouton_valider.clicked.connect(self.controleur.exporter_positions)
 
-        # Layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.view)
-        layout.addWidget(self.slider_zoom)
-        layout.addWidget(self.bouton_valider)
-        self.setLayout(layout)
+        # Zone latérale
+        self.liste_produits_case = QListWidget()
+        self.bouton_ajouter = QPushButton("Ajouter un produit")
+        self.bouton_supprimer = QPushButton("Supprimer le produit sélectionné")
+        self.bouton_vider = QPushButton("Vider la case")
 
-        # Dessiner une grille de base
+        self.bouton_ajouter.clicked.connect(self.ajouter_produit_case)
+        self.bouton_supprimer.clicked.connect(self.supprimer_produit_case)
+        self.bouton_vider.clicked.connect(self.vider_case)
+
+        layout_droit = QVBoxLayout()
+        layout_droit.addWidget(QLabel("Contenu de la case"))
+        layout_droit.addWidget(self.liste_produits_case)
+        layout_droit.addWidget(self.bouton_ajouter)
+        layout_droit.addWidget(self.bouton_supprimer)
+        layout_droit.addWidget(self.bouton_vider)
+        layout_droit.addStretch()
+        layout_droit.addWidget(self.bouton_valider)
+
+        layout_gauche = QVBoxLayout()
+        layout_gauche.addWidget(self.view)
+        layout_gauche.addWidget(self.slider_zoom)
+
+        layout_principal = QHBoxLayout()
+        layout_principal.addLayout(layout_gauche)
+        layout_principal.addLayout(layout_droit)
+
+        self.setLayout(layout_principal)
+
         self.taille_cellule = 50
         self.dessiner_grille()
 
         self.view.viewport().installEventFilter(self)
+
+        self.x_selection = None
+        self.y_selection = None
 
     def dessiner_grille(self):
         grille_color = QColor(0, 0, 0)
@@ -78,10 +100,36 @@ class vueArticle(QWidget):
         self.view.scale(scale_factor, scale_factor)
 
     def eventFilter(self, source, event):
-        if event.type() == event.Type.MouseButtonPress and event.buttons() == Qt.MouseButton.LeftButton:
+        if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
             position = self.view.mapToScene(event.position().toPoint())
-            x = int(position.x()) // self.taille_cellule
-            y = int(position.y()) // self.taille_cellule
-            print(f"Zone sélectionnée : x={x}, y={y}")
-            self.controleur.ajouter_produit_coordonne(x, y)
+            self.x_selection = int(position.x()) // self.taille_cellule
+            self.y_selection = int(position.y()) // self.taille_cellule
+            print(f"Case sélectionnée : x={self.x_selection}, y={self.y_selection}")
+            self.mettre_a_jour_liste_produits()
         return super().eventFilter(source, event)
+
+
+    def mettre_a_jour_liste_produits(self):
+        self.liste_produits_case.clear()
+        if self.x_selection is None or self.y_selection is None:
+            return
+        produits = self.controleur.get_produits_coordonne(self.x_selection, self.y_selection)
+        self.liste_produits_case.addItems(produits)
+
+    def ajouter_produit_case(self):
+        if self.x_selection is None or self.y_selection is None:
+            QMessageBox.warning(self, "Erreur", "Aucune case sélectionnée")
+            return
+        self.controleur.ajouter_produit_coordonne(self.x_selection, self.y_selection)
+        self.mettre_a_jour_liste_produits()
+
+    def supprimer_produit_case(self):
+        selected = self.liste_produits_case.currentItem()
+        if selected:
+            produit = selected.text()
+            self.controleur.supprimer_produit_coordonne(produit, self.x_selection, self.y_selection)
+            self.mettre_a_jour_liste_produits()
+
+    def vider_case(self):
+        self.controleur.vider_case(self.x_selection, self.y_selection)
+        self.mettre_a_jour_liste_produits()
