@@ -33,3 +33,15 @@ class ModeleDonnees:
 
     def get_produits_par_categorie(self, categorie):
         return self.produits.get(categorie, [])
+
+    def get_produits_coordonne(self, x, y):
+        return [p['produit'] for p in self.positions if p['x'] == x and p['y'] == y]
+
+    def supprimer_produit_coordonne(self, produit, x, y):
+        self.positions = [
+            p for p in self.positions
+            if not (p['produit'] == produit and p['x'] == x and p['y'] == y)
+        ]
+
+    def vider_case(self, x, y):
+        self.positions = [p for p in self.positions if not (p['x'] == x and p['y'] == y)]
