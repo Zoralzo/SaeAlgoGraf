@@ -87,6 +87,9 @@ class vueArticle(QWidget):
         self.y_selection = None
 
     def dessiner_grille(self):
+        """
+        Dessine la grille sur la carte
+        """
         grille_color = QColor(0, 0, 0)
         pen = QPen(grille_color)
         pen.setWidth(1)
@@ -99,11 +102,17 @@ class vueArticle(QWidget):
             self.scene.addLine(0, y, largeur, y, pen)
 
     def zoom_changed(self, value):
+        """
+        Créer un zoom sur la carte
+        """
         scale_factor = value / 100
         self.view.resetTransform()
         self.view.scale(scale_factor, scale_factor)
 
     def eventFilter(self, source, event):
+        """
+        Verifie la position du clique si il est valide ou non
+        """
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
             position = self.view.mapToScene(event.position().toPoint())
             x = int(position.x()) // self.taille_cellule
@@ -133,6 +142,9 @@ class vueArticle(QWidget):
 
 
     def mettre_a_jour_liste_produits(self):
+        """
+        donne les articles d'une case
+        """
         self.liste_produits_case.clear()
         if self.x_selection is None or self.y_selection is None:
             return
@@ -140,6 +152,9 @@ class vueArticle(QWidget):
         self.liste_produits_case.addItems(produits)
 
     def ajouter_produit_case(self):
+        """
+        ajoute un article a une case
+        """
         if self.x_selection is None or self.y_selection is None:
             QMessageBox.warning(self, "Erreur", "Aucune case sélectionnée")
             return
@@ -147,6 +162,9 @@ class vueArticle(QWidget):
         self.mettre_a_jour_liste_produits()
 
     def supprimer_produit_case(self):
+        """
+        supprime article d'une case
+        """
         selected = self.liste_produits_case.currentItem()
         if selected:
             produit = selected.text()
@@ -154,6 +172,9 @@ class vueArticle(QWidget):
             self.mettre_a_jour_liste_produits()
 
     def vider_case(self):
+        """
+        Vide articles d'une case
+        """
         self.controleur.vider_case(self.x_selection, self.y_selection)
         self.mettre_a_jour_liste_produits()
 
