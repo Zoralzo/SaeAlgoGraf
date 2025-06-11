@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
 import sys
 from PyQt6.QtWidgets import QApplication
-from ModeleDonnees import ModeleDonnees
-from vueArticle import vueArticle
+from ModeleDonneesApp2 import ModeleDonnees
+from vueArticleApp2 import vueArticle
 
 # -----------------------------------------------------------------------------
 # --- class Controleur
