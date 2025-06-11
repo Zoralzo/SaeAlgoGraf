@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtGui import QPainter, QColor, QPen
-
+from PyQt6.QtWidgets import QApplication
 # -----------------------------------------------------------------------------
 # --- class VueArticle
 # -----------------------------------------------------------------------------
@@ -43,6 +43,8 @@ class vueArticle(QWidget):
         self.slider_zoom.valueChanged.connect(self.zoom_changed)
 
         self.bouton_valider = QPushButton("Valider")
+        self.bouton_quitter = QPushButton("Quitter l'application")
+        self.bouton_quitter.clicked.connect(self.quitter_application)
         self.bouton_valider.clicked.connect(self.controleur.exporter_positions)
 
         # Zone latérale
@@ -61,6 +63,7 @@ class vueArticle(QWidget):
         layout_droit.addWidget(self.bouton_ajouter)
         layout_droit.addWidget(self.bouton_supprimer)
         layout_droit.addWidget(self.bouton_vider)
+        layout_droit.addWidget(self.bouton_quitter)
         layout_droit.addStretch()
         layout_droit.addWidget(self.bouton_valider)
 
@@ -73,6 +76,7 @@ class vueArticle(QWidget):
         layout_principal.addLayout(layout_droit)
 
         self.setLayout(layout_principal)
+        self.showFullScreen()
 
         self.taille_cellule = 50
         self.dessiner_grille()
@@ -113,6 +117,17 @@ class vueArticle(QWidget):
             self.y_selection = y
             print(f"Case sélectionnée : x={self.x_selection}, y={self.y_selection}")
             self.mettre_a_jour_liste_produits()
+
+        elif event.type() == QEvent.Type.MouseMove:
+            position = self.view.mapToScene(event.position().toPoint())
+            x = int(position.x()) // self.taille_cellule
+            y = int(position.y()) // self.taille_cellule
+
+            if self.controleur.est_position_valide(x, y):
+                self.view.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+            else:
+                self.view.viewport().setCursor(Qt.CursorShape.ForbiddenCursor)
+
         return super().eventFilter(source, event)
 
 
@@ -141,3 +156,13 @@ class vueArticle(QWidget):
     def vider_case(self):
         self.controleur.vider_case(self.x_selection, self.y_selection)
         self.mettre_a_jour_liste_produits()
+
+    def quitter_application(self):
+        reponse = QMessageBox.question(
+            self,
+            "Quitter",
+            "Voulez-vous vraiment quitter l'application ?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reponse == QMessageBox.StandardButton.Yes:
+            QApplication.quit()
