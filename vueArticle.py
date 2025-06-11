@@ -143,8 +143,9 @@ class vueArticle(QWidget):
 
     def mettre_a_jour_liste_produits(self):
         """
-        donne les articles d'une case, met a jour la liste des produits
-        et dessine un rectangle coloré si la case contient des produits
+        Met à jour la liste des produits de la case sélectionnée,
+        encadre visuellement uniquement la case sélectionnée,
+        et colore si elle contient des produits.
         """
         self.liste_produits_case.clear()
         if self.x_selection is None or self.y_selection is None:
@@ -153,26 +154,30 @@ class vueArticle(QWidget):
         produits = self.controleur.get_produits_coordonne(self.x_selection, self.y_selection)
         self.liste_produits_case.addItems(produits)
 
-        # Identifier la clé de la case
+        # Effacer tous les anciens encadrements
+        for rect_item in self.rectangles_colores.values():
+            self.scene.removeItem(rect_item)
+        self.rectangles_colores.clear()
+
         key = (self.x_selection, self.y_selection)
+        x_pix = self.x_selection * self.taille_cellule
+        y_pix = self.y_selection * self.taille_cellule
 
-        # Supprimer le rectangle existant si présent
-        if key in self.rectangles_colores:
-            self.scene.removeItem(self.rectangles_colores[key])
-            del self.rectangles_colores[key]
-
-        # Si la case contient des produits, dessiner un rectangle coloré
+        # Couleur différente selon qu'il y a des produits ou non
         if produits:
-            x_pix = self.x_selection * self.taille_cellule
-            y_pix = self.y_selection * self.taille_cellule
+            brush = QColor(255, 215, 0, 100)  # Jaune transparent
+        else:
+            brush = QColor(0, 0, 0, 0)  # Transparent
 
-            rect = self.scene.addRect(
-                x_pix, y_pix,
-                self.taille_cellule, self.taille_cellule,
-                pen=QPen(Qt.GlobalColor.transparent),
-                brush=QColor(255, 215, 0, 100)  # Jaune transparent
-            )
-            self.rectangles_colores[key] = rect
+        rect = self.scene.addRect(
+            x_pix, y_pix,
+            self.taille_cellule, self.taille_cellule,
+            pen=QPen(QColor(0, 0, 0), 5),  # Bordure noir épaisse
+            brush=brush
+        )
+        self.rectangles_colores[key] = rect
+
+
 
     def ajouter_produit_case(self):
         """
