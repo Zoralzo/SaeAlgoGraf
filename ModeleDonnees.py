@@ -90,3 +90,7 @@ class ModeleDonnees:
 
     def vider_case(self, x, y):
         self.positions = [p for p in self.positions if not (p['x'] == x and p['y'] == y)]
+
+
+    def est_position_valide(self, x, y):
+        return (x, y) in self.positions_valides

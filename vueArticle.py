@@ -102,11 +102,19 @@ class vueArticle(QWidget):
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
             position = self.view.mapToScene(event.position().toPoint())
-            self.x_selection = int(position.x()) // self.taille_cellule
-            self.y_selection = int(position.y()) // self.taille_cellule
+            x = int(position.x()) // self.taille_cellule
+            y = int(position.y()) // self.taille_cellule
+
+            if not self.controleur.est_position_valide(x, y):
+                QMessageBox.warning(self, "Hors rayon", "Vous ne cliquez pas dans un rayon.")
+                return True
+
+            self.x_selection = x
+            self.y_selection = y
             print(f"Case sélectionnée : x={self.x_selection}, y={self.y_selection}")
             self.mettre_a_jour_liste_produits()
         return super().eventFilter(source, event)
+
 
 
     def mettre_a_jour_liste_produits(self):

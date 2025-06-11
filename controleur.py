@@ -38,6 +38,10 @@ class Controleur:
 
     def vider_case(self, x, y):
         self.modele.vider_case(x, y)
+
+    def est_position_valide(self, x, y):
+        return self.modele.est_position_valide(x, y)
+
         
         
 
