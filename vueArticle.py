@@ -3,7 +3,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QGraphicsPixmapItem, QWidget, QGraphicsView, QGraphicsScene,
     QVBoxLayout, QPushButton, QSlider, QHBoxLayout, QListWidget,
-    QLabel, QMessageBox
+    QLabel, QMessageBox, QLineEdit
 )
 from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtGui import QPainter, QColor, QPen
@@ -49,6 +49,13 @@ class vueArticle(QWidget):
 
         # Zone latérale
         self.liste_produits_case = QListWidget()
+
+        # --- Barre de recherche ---
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Rechercher un produit...")
+        self.search_bar.textChanged.connect(self.filtrer_produits)
+        self.texte_filtre = ""
+
         self.bouton_ajouter = QPushButton("Ajouter un produit")
         self.bouton_supprimer = QPushButton("Supprimer le produit sélectionné")
         self.bouton_vider = QPushButton("Vider la case")
@@ -59,6 +66,7 @@ class vueArticle(QWidget):
 
         layout_droit = QVBoxLayout()
         layout_droit.addWidget(QLabel("Contenu de la case"))
+        layout_droit.addWidget(self.search_bar)
         layout_droit.addWidget(self.liste_produits_case)
         layout_droit.addWidget(self.bouton_ajouter)
         layout_droit.addWidget(self.bouton_supprimer)
@@ -79,13 +87,17 @@ class vueArticle(QWidget):
         self.showFullScreen()
 
         self.taille_cellule = 50
-        self.rectangles_colores = {}  # Pour suivre les surlignages par case
+        self.rectangles_colores = {}  # Pour fond jaune sur cases avec produit
+        self.rect_selection = None  # Pour bordure noire sur case sélectionnée
         self.dessiner_grille()
 
         self.view.viewport().installEventFilter(self)
 
         self.x_selection = None
         self.y_selection = None
+
+        # On colore directement les cases avec produits
+        self.mettre_a_jour_couleurs_cases()
 
     def dessiner_grille(self):
         """
@@ -127,6 +139,7 @@ class vueArticle(QWidget):
             self.y_selection = y
             print(f"Case sélectionnée : x={self.x_selection}, y={self.y_selection}")
             self.mettre_a_jour_liste_produits()
+            self.mettre_a_jour_bordure_selection()
 
         elif event.type() == QEvent.Type.MouseMove:
             position = self.view.mapToScene(event.position().toPoint())
@@ -140,44 +153,77 @@ class vueArticle(QWidget):
 
         return super().eventFilter(source, event)
 
+    def mettre_a_jour_couleurs_cases(self):
+        """
+        Colore en jaune toutes les cases qui contiennent au moins un produit.
+        """
+        # D'abord, on enlève les anciens rectangles jaunes
+        for rect_item in self.rectangles_colores.values():
+            self.scene.removeItem(rect_item)
+        self.rectangles_colores.clear()
+
+        largeur = self.plan_item.pixmap().width() // self.taille_cellule
+        hauteur = self.plan_item.pixmap().height() // self.taille_cellule
+
+        for x in range(largeur):
+            for y in range(hauteur):
+                produits = self.controleur.get_produits_coordonne(x, y)
+                if produits:
+                    x_pix = x * self.taille_cellule
+                    y_pix = y * self.taille_cellule
+                    rect = self.scene.addRect(
+                        x_pix, y_pix,
+                        self.taille_cellule, self.taille_cellule,
+                        pen=QPen(Qt.GlobalColor.transparent),  # Pas de bordure ici
+                        brush=QColor(255, 215, 0, 100)  # Jaune transparent
+                    )
+                    self.rectangles_colores[(x, y)] = rect
+
+    def mettre_a_jour_bordure_selection(self):
+        """
+        Met une bordure noire épaisse autour de la case sélectionnée uniquement.
+        """
+        # Supprime ancienne bordure si existante
+        if self.rect_selection is not None:
+            self.scene.removeItem(self.rect_selection)
+            self.rect_selection = None
+
+        if self.x_selection is None or self.y_selection is None:
+            return
+
+        x_pix = self.x_selection * self.taille_cellule
+        y_pix = self.y_selection * self.taille_cellule
+
+        self.rect_selection = self.scene.addRect(
+            x_pix, y_pix,
+            self.taille_cellule, self.taille_cellule,
+            pen=QPen(QColor(0, 0, 0), 5),
+            brush=Qt.GlobalColor.transparent
+        )
 
     def mettre_a_jour_liste_produits(self):
         """
         Met à jour la liste des produits de la case sélectionnée,
-        encadre visuellement uniquement la case sélectionnée,
-        et colore si elle contient des produits.
+        avec filtrage selon la recherche.
         """
         self.liste_produits_case.clear()
         if self.x_selection is None or self.y_selection is None:
             return
 
         produits = self.controleur.get_produits_coordonne(self.x_selection, self.y_selection)
+
+        # Appliquer le filtre si texte_filtre non vide (insensible à la casse)
+        if self.texte_filtre:
+            produits = [p for p in produits if self.texte_filtre.lower() in p.lower()]
+
         self.liste_produits_case.addItems(produits)
 
-        # Effacer tous les anciens encadrements
-        for rect_item in self.rectangles_colores.values():
-            self.scene.removeItem(rect_item)
-        self.rectangles_colores.clear()
-
-        key = (self.x_selection, self.y_selection)
-        x_pix = self.x_selection * self.taille_cellule
-        y_pix = self.y_selection * self.taille_cellule
-
-        # Couleur différente selon qu'il y a des produits ou non
-        if produits:
-            brush = QColor(255, 215, 0, 100)  # Jaune transparent
-        else:
-            brush = QColor(0, 0, 0, 0)  # Transparent
-
-        rect = self.scene.addRect(
-            x_pix, y_pix,
-            self.taille_cellule, self.taille_cellule,
-            pen=QPen(QColor(0, 0, 0), 5),  # Bordure noir épaisse
-            brush=brush
-        )
-        self.rectangles_colores[key] = rect
-
-
+    def filtrer_produits(self, texte):
+        """
+        Met à jour la liste selon le texte saisi dans la barre de recherche.
+        """
+        self.texte_filtre = texte
+        self.mettre_a_jour_liste_produits()
 
     def ajouter_produit_case(self):
         """
@@ -187,31 +233,33 @@ class vueArticle(QWidget):
             QMessageBox.warning(self, "Erreur", "Aucune case sélectionnée")
             return
         self.controleur.ajouter_produit_coordonne(self.x_selection, self.y_selection)
+        self.mettre_a_jour_couleurs_cases()
         self.mettre_a_jour_liste_produits()
 
     def supprimer_produit_case(self):
         """
-        supprime article d'une case
+        supprime un article a une case
         """
-        selected = self.liste_produits_case.currentItem()
-        if selected:
-            produit = selected.text()
-            self.controleur.supprimer_produit_coordonne(produit, self.x_selection, self.y_selection)
-            self.mettre_a_jour_liste_produits()
+        if self.x_selection is None or self.y_selection is None:
+            QMessageBox.warning(self, "Erreur", "Aucune case sélectionnée")
+            return
+        self.controleur.supprimer_produit_coordonne(self.x_selection, self.y_selection)
+        self.mettre_a_jour_couleurs_cases()
+        self.mettre_a_jour_liste_produits()
 
     def vider_case(self):
         """
-        Vide articles d'une case
+        vide tous les articles d'une case
         """
+        if self.x_selection is None or self.y_selection is None:
+            QMessageBox.warning(self, "Erreur", "Aucune case sélectionnée")
+            return
         self.controleur.vider_case(self.x_selection, self.y_selection)
+        self.mettre_a_jour_couleurs_cases()
         self.mettre_a_jour_liste_produits()
 
     def quitter_application(self):
-        reponse = QMessageBox.question(
-            self,
-            "Quitter",
-            "Voulez-vous vraiment quitter l'application ?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        if reponse == QMessageBox.StandardButton.Yes:
-            QApplication.quit()
+        """
+        Quitte l'application
+        """
+        self.close()
