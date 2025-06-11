@@ -79,6 +79,7 @@ class vueArticle(QWidget):
         self.showFullScreen()
 
         self.taille_cellule = 50
+        self.rectangles_colores = {}  # Pour suivre les surlignages par case
         self.dessiner_grille()
 
         self.view.viewport().installEventFilter(self)
@@ -140,16 +141,38 @@ class vueArticle(QWidget):
         return super().eventFilter(source, event)
 
 
-
     def mettre_a_jour_liste_produits(self):
         """
-        donne les articles d'une case
+        donne les articles d'une case, met a jour la liste des produits
+        et dessine un rectangle coloré si la case contient des produits
         """
         self.liste_produits_case.clear()
         if self.x_selection is None or self.y_selection is None:
             return
+
         produits = self.controleur.get_produits_coordonne(self.x_selection, self.y_selection)
         self.liste_produits_case.addItems(produits)
+
+        # Identifier la clé de la case
+        key = (self.x_selection, self.y_selection)
+
+        # Supprimer le rectangle existant si présent
+        if key in self.rectangles_colores:
+            self.scene.removeItem(self.rectangles_colores[key])
+            del self.rectangles_colores[key]
+
+        # Si la case contient des produits, dessiner un rectangle coloré
+        if produits:
+            x_pix = self.x_selection * self.taille_cellule
+            y_pix = self.y_selection * self.taille_cellule
+
+            rect = self.scene.addRect(
+                x_pix, y_pix,
+                self.taille_cellule, self.taille_cellule,
+                pen=QPen(Qt.GlobalColor.transparent),
+                brush=QColor(255, 215, 0, 100)  # Jaune transparent
+            )
+            self.rectangles_colores[key] = rect
 
     def ajouter_produit_case(self):
         """
