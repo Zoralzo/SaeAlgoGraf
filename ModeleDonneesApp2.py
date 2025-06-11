@@ -1,14 +1,14 @@
 import json
 
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # --- class ModeleDonnees
-# -----------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 class ModeleDonnees:
     def __init__(self, chemin_produits):
         self.chemin_produits = chemin_produits
         self.produits = self.charger_produits()
-        self.positions = []  # Liste des produits placés avec coordonnées
+        self.positions = []  # Liste des tuples (produit_id, x, y)
         self.positions_valides = [ # Liste des positions valides sur le plan
             (4, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0), (21, 0),
             (3, 1), (4, 1), (5, 1), (8, 1), (9, 1), (10, 1), (11, 1), (12, 1), (13, 1), (14, 1), (15, 1), (16, 1), (17, 1), (18, 1), (19, 1), (20, 1), (21, 1), (23, 1), (24, 1), (25, 1), (26, 1), (27, 1), (28, 1), (29, 1), (30, 1), (31, 1), (32, 1), (33, 1), (34, 1), (23, 1), (24, 1), (25, 1), (26, 1), (27, 1), (28, 1),
@@ -56,116 +56,78 @@ class ModeleDonnees:
         ]
 
     def charger_produits(self):
-        """
-        Charge les produits depuis le fichier JSON.
+        """Charge les produits depuis un fichier JSON."""
+        try:
+            with open(self.chemin_produits, "r", encoding="utf-8") as f:
+                produits = json.load(f)
+            return produits
+        except Exception as e:
+            print(f"Erreur lors du chargement des produits : {e}")
+            return []
 
-        Returns:
-            dict: Dictionnaire des catégories avec leurs produits.
-        """
-        with open(self.chemin_produits, 'r', encoding='utf-8') as f:
-            return json.load(f)
+    def ajouter_produit_position(self, produit_id, x, y):
+        """Ajoute un produit à une position si celle-ci est valide et non prise."""
+        if not self.position_valide(x, y):
+            print(f"Position ({x},{y}) non valide.")
+            return False
+        if self.position_occupee(x, y):
+            print(f"Position ({x},{y}) déjà occupée.")
+            return False
+        self.positions.append({"id": produit_id, "x": x, "y": y})
+        return True
 
-    def ajouter_position(self, produit, x, y):
-        """
-        Ajoute un produit à une position donnée.
-
-        Args:
-            produit (str): Nom du produit.
-            x (int): Coordonnée x.
-            y (int): Coordonnée y.
-        """
-        self.positions.append({
-            'produit': produit,
-            'x': x,
-            'y': y
-        })
-
-    def supprimer_position(self, produit):
-        """
-        Supprime toutes les positions associées à un produit.
-
-        Args:
-            produit (str): Nom du produit à supprimer.
-        """
-        self.positions = [p for p in self.positions if p['produit'] != produit]
-
-    def exporter_positions(self, chemin='produits_positions.json'):
-        """
-        Exporte toutes les positions dans un fichier JSON.
-
-        Args:
-            chemin (str, optional): Chemin du fichier de sortie. Par défaut 'produits_positions.json'.
-        """
-        with open(chemin, 'w', encoding='utf-8') as f:
-            json.dump(self.positions, f, indent=4, ensure_ascii=False)
-
-    def get_categories(self):
-        """
-        Retourne la liste des catégories de produits.
-
-        Returns:
-            list[str]: Liste des noms de catégories.
-        """
-        return list(self.produits.keys())
-
-    def get_produits_par_categorie(self, categorie):
-        """
-        Retourne les produits d'une catégorie donnée.
-
-        Args:
-            categorie (str): Nom de la catégorie.
-
-        Returns:
-            list[str]: Liste des produits de cette catégorie.
-        """
-        return self.produits.get(categorie, [])
-
-    def get_produits_coordonne(self, x, y):
-        """
-        Récupère tous les produits à une position donnée.
-
-        Args:
-            x (int): Coordonnée x.
-            y (int): Coordonnée y.
-
-        Returns:
-            list[str]: Liste des produits présents à la position (x, y).
-        """
-        return [p['produit'] for p in self.positions if p['x'] == x and p['y'] == y]
-
-    def supprimer_produit_coordonne(self, produit, x, y):
-        """
-        Supprime un produit spécifique d'une position.
-
-        Args:
-            produit (str): Nom du produit.
-            x (int): Coordonnée x.
-            y (int): Coordonnée y.
-        """
-        self.positions = [
-            p for p in self.positions
-            if not (p['produit'] == produit and p['x'] == x and p['y'] == y)
-        ]
-
-    def vider_case(self, x, y):
-        """
-        Supprime tous les produits d'une case donnée.
-
-        Args:
-            x (int): Coordonnée x.
-            y (int): Coordonnée y.
-        """
-        self.positions = [p for p in self.positions if not (p['x'] == x and p['y'] == y)]
-
-    def est_position_valide(self, x, y):
-        """
-        Vérifie si une position (x, y) est autorisée pour placer un produit.
-
-        Args:
-            x (int): Coordonnée x.
-            y (int): Coordonnée y.
-
-        Returns:
-            bool: True si la position est valide, False sinon.
-        """
+    def position_valide(self, x, y):
+        """Vérifie si la position est dans la liste des positions valides."""
         return (x, y) in self.positions_valides
+
+    def position_occupee(self, x, y):
+        """Vérifie si une position est déjà occupée par un produit."""
+        for pos in self.positions:
+            if pos["x"] == x and pos["y"] == y:
+                return True
+        return False
+
+    def deplacer_produit(self, produit_id, new_x, new_y):
+        """Déplace un produit à une nouvelle position si possible."""
+        if not self.position_valide(new_x, new_y):
+            print(f"Nouvelle position ({new_x},{new_y}) non valide.")
+            return False
+        if self.position_occupee(new_x, new_y):
+            print(f"Nouvelle position ({new_x},{new_y}) déjà occupée.")
+            return False
+        for pos in self.positions:
+            if pos["id"] == produit_id:
+                pos["x"] = new_x
+                pos["y"] = new_y
+                return True
+        print(f"Produit {produit_id} non trouvé.")
+        return False
+
+    def supprimer_produit(self, produit_id):
+        """Supprime un produit de la liste des positions."""
+        for pos in self.positions:
+            if pos["id"] == produit_id:
+                self.positions.remove(pos)
+                return True
+        print(f"Produit {produit_id} non trouvé pour suppression.")
+        return False
+
+    def exporter_positions(self, chemin_fichier):
+        """Exporte la liste des positions au format JSON dans un fichier."""
+        try:
+            with open(chemin_fichier, "w", encoding="utf-8") as f:
+                json.dump(self.positions, f, indent=4)
+            return True
+        except Exception as e:
+            print(f"Erreur lors de l'export des positions : {e}")
+            return False
+
+    def charger_positions(self, chemin_fichier):
+        """Charge une liste de positions depuis un fichier JSON."""
+        try:
+            with open(chemin_fichier, "r", encoding="utf-8") as f:
+                self.positions = json.load(f)
+            return True
+        except Exception as e:
+            print(f"Erreur lors du chargement des positions : {e}")
+            return False
