@@ -1,4 +1,6 @@
 import json
+from collections import deque
+
 
 # -------------------------------------------------------------------------------
 # --- class ModeleDonnees
@@ -195,9 +197,32 @@ class ModeleDonnees:
                 return (produit_id, x, y)
 
         return None  # Aucune position libre trouvée
+
+def trouver_plus_court_chemin(depart, arrivees, obstacles=set()):
+    """
+    Trouve le plus court chemin depuis `depart` vers un des points de `arrivees`.
+    `obstacles` est un ensemble de positions interdites (x, y).
+    Retourne le chemin sous forme de liste de tuples (x, y).
+    """
+    queue = deque([(depart, [])])
+    vus = set([depart])
+
+    while queue:
+        (x, y), chemin = queue.popleft()
+        if (x, y) in arrivees:
+            return chemin + [(x, y)]
+
+        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+            nx, ny = x + dx, y + dy
+            voisin = (nx, ny)
+            if voisin not in vus and voisin not in obstacles:
+                vus.add(voisin)
+                queue.append((voisin, chemin + [(x, y)]))
     
+    return None  # Aucun chemin trouvé
+
     
-    def bouton_recherche_clicked(self):
+def bouton_recherche_clicked(self):
         nom_recherche = self.vue.get_texte_recherche()  # Méthode de la vue à définir
         resultat = self.modele.rechercher_emplacement_libre(nom_recherche)
 

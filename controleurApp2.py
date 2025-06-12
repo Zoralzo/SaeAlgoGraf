@@ -5,6 +5,7 @@ from ModeleDonneesApp2 import ModeleDonnees
 from vueArticleApp2 import vueArticle
 from PyQt6.QtWidgets import QFileDialog
 import json
+from ModeleDonneesApp2 import trouver_plus_court_chemin
 
 class Controleur:
     def __init__(self, modele):
@@ -141,6 +142,25 @@ class Controleur:
             QMessageBox.information(self.vue, "Positions libres", f"Positions disponibles :\n{message}")
         else:
             QMessageBox.information(self.vue, "Positions libres", "Aucune position libre disponible.")
+            
+
+
+    def rechercher_produits(self, liste_produits):
+        depart = (45, 42)
+        arrivees = [(15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
+                    (25, 42), (27, 42), (29, 42), (31, 42), (32, 42),
+                    (34, 42), (36, 42), (37, 42)]
+
+        # Exemple : liste des obstacles à éviter (produits placés hors chemin par exemple)
+        obstacles = set()
+
+        chemin = trouver_plus_court_chemin(depart, set(arrivees), obstacles)
+
+        if chemin:
+            self.vue.afficher_chemin(chemin)
+        else:
+            print("Aucun chemin trouvé.")
+
             
     
 

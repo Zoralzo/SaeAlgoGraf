@@ -114,10 +114,11 @@ class vueArticle(QWidget):
         self.view.scale(facteur, facteur)
 
     def rechercher(self):
+        """Recherche les produits dans la barre de recherche"""
         texte = self.liste_recherche_bar.text()
         produits = [p.strip().lower() for p in texte.split(",") if p.strip()]
-        if produits:
-            self.controleur.rechercher_produits(produits)
+        self.controleur.rechercher_produits(produits)
+
 
     def actualiser_affichage(self):
         """Actualise l'affichage après un import"""
@@ -126,3 +127,15 @@ class vueArticle(QWidget):
             self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
         else:
             print("Aucun plan à afficher.")
+            
+    def afficher_chemin(self, chemin):
+        self.dessiner_grille()  # Redessine tout
+        for x, y in chemin:
+            rect = self.scene.addRect(
+                x * self.taille_cellule,
+                y * self.taille_cellule,
+                self.taille_cellule,
+                self.taille_cellule,
+                QPen(Qt.GlobalColor.green)
+            )
+
