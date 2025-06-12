@@ -81,23 +81,31 @@ class vueArticle(QWidget):
         self.plan_item = self.scene.addPixmap(pixmap)
         self.scene.setSceneRect(QRectF(pixmap.rect()))
 
-        # Calcul automatique des colonnes et lignes selon taille image et taille cellule
         colonnes = pixmap.width() // self.taille_cellule
         lignes = pixmap.height() // self.taille_cellule
 
-        pen = QPen(QColor(0, 0, 0))
-        pen.setWidth(1)
-
         for x in range(colonnes):
             for y in range(lignes):
+                # Vérifie s'il y a un produit à ces coordonnées
+                produits = self.controleur.get_produits_coordonne(x, y)
+
+                if produits:
+                    # Bordure rouge et épaisse
+                    pen = QPen(QColor("black"))
+                    pen.setWidth(10)
+                else:
+                    # Bordure noire classique
+                    pen = QPen(QColor(0, 0, 0))
+                    pen.setWidth(1)
+
                 self.scene.addRect(
                     x * self.taille_cellule, y * self.taille_cellule,
                     self.taille_cellule, self.taille_cellule,
                     pen
                 )
 
-        # Adapter la vue pour afficher toute la scène
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+
 
 
     def ajuster_zoom(self, value):

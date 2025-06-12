@@ -71,14 +71,19 @@ class Controleur:
             with open(chemin_fichier, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            if self.modele.charger_magasin(data):
-                QMessageBox.information(self.vue, "Import réussi", "Le magasin a bien été importé depuis le fichier JSON.")
-                self.vue.actualiser_affichage()
-            else:
-                QMessageBox.critical(self.vue, "Erreur", "Erreur lors du chargement des données")
+            for item in data:
+                produit = item.get("produit")
+                x = item.get("x")
+                y = item.get("y")
+                if produit and isinstance(x, int) and isinstance(y, int):
+                    self.modele.ajouter_position(produit, x, y)
+
+            QMessageBox.information(self.vue, "Import réussi", "Les produits ont été importés et placés sur la grille.")
+            self.vue.actualiser_affichage()
 
         except Exception as e:
             QMessageBox.critical(self.vue, "Erreur import", f"Erreur lors de l'import du fichier JSON :\n{e}")
+
         
     def importer_liste_txt(self):
         if not self.vue:
