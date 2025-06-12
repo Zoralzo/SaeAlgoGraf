@@ -174,3 +174,37 @@ class ModeleDonnees:
     def vider_case(self, x, y):
         """Vide une case de tous ses produits"""
         self.positions = [pos for pos in self.positions if not (pos["x"] == x and pos["y"] == y)]
+        
+    def rechercher_emplacement_libre(self, nom_produit):
+        # Trouver le produit correspondant au nom
+        produit_id = None
+        for p in self.produits:
+            if p["nom"].lower() == nom_produit.lower():
+                produit_id = p["id"]
+                break
+
+        if produit_id is None:
+            return None  # Produit non trouvé
+
+        # Positions déjà occupées
+        positions_occupees = [(x, y) for (_, x, y) in self.positions]
+
+        # Rechercher une position valide libre
+        for (x, y) in self.positions_valides:
+            if (x, y) not in positions_occupees:
+                return (produit_id, x, y)
+
+        return None  # Aucune position libre trouvée
+    
+    
+    def bouton_recherche_clicked(self):
+        nom_recherche = self.vue.get_texte_recherche()  # Méthode de la vue à définir
+        resultat = self.modele.rechercher_emplacement_libre(nom_recherche)
+
+        if resultat is not None:
+            produit_id, x, y = resultat
+            self.modele.positions.append((produit_id, x, y))
+            self.vue.ajouter_article(produit_id, x, y)  # Affiche le produit sur la grille
+            self.vue.afficher_message(f"{nom_recherche} ajouté en ({x},{y})")
+        else:
+            self.vue.afficher_message("Produit introuvable ou plus de place.")

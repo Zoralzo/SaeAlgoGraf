@@ -133,6 +133,17 @@ class Controleur:
             QMessageBox.information(self.vue, "Résultats de recherche", message)
         else:
             QMessageBox.information(self.vue, "Résultats", "Aucun produit trouvé.")
+    
+    def rechercher_positions_libres(self):
+        positions_libres = self.modele.rechercher_positions_possibles()
+        if positions_libres:
+            message = "\n".join(f"({x}, {y})" for x, y in positions_libres)
+            QMessageBox.information(self.vue, "Positions libres", f"Positions disponibles :\n{message}")
+        else:
+            QMessageBox.information(self.vue, "Positions libres", "Aucune position libre disponible.")
+            
+    
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

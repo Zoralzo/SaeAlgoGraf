@@ -33,15 +33,17 @@ class vueArticle(QWidget):
         self.liste_recherche_bar.setFont(QFont("Arial", 12))
 
         bouton_rechercher = QPushButton("Rechercher")
+        bouton_recherche_positions = QPushButton("Positions libres")
         bouton_importer_magasin = QPushButton("Importer Magasin JSON")
         bouton_importer_liste = QPushButton("Importer Liste .txt")
         bouton_quitter = QPushButton("Quitter")
 
-        for bouton in [bouton_rechercher, bouton_importer_magasin, bouton_importer_liste, bouton_quitter]:
+        for bouton in [bouton_rechercher, bouton_recherche_positions, bouton_importer_magasin, bouton_importer_liste, bouton_quitter]:
             bouton.setMinimumHeight(40)
             bouton.setFont(QFont("Arial", 12))
 
         bouton_rechercher.clicked.connect(self.rechercher)
+        bouton_recherche_positions.clicked.connect(self.controleur.rechercher_positions_libres)
         bouton_importer_magasin.clicked.connect(self.controleur.importer_magasin_json)
         bouton_importer_liste.clicked.connect(self.controleur.importer_liste_txt)
         bouton_quitter.clicked.connect(self.close)
@@ -57,6 +59,7 @@ class vueArticle(QWidget):
         boutons_layout.addWidget(bouton_importer_magasin)
         boutons_layout.addWidget(bouton_importer_liste)
         boutons_layout.addWidget(bouton_rechercher)
+        boutons_layout.addWidget(bouton_recherche_positions)
         boutons_layout.addWidget(bouton_quitter)
 
         layout_principal.addLayout(barre_layout)
@@ -68,7 +71,6 @@ class vueArticle(QWidget):
         self.setLayout(layout_principal)
 
         self.dessiner_grille()
-
 
     def dessiner_grille(self):
         self.scene.clear()
@@ -106,13 +108,10 @@ class vueArticle(QWidget):
 
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
-
-
     def ajuster_zoom(self, value):
         facteur = value / 100
         self.view.resetTransform()
         self.view.scale(facteur, facteur)
-
 
     def rechercher(self):
         texte = self.liste_recherche_bar.text()
@@ -120,7 +119,6 @@ class vueArticle(QWidget):
         if produits:
             self.controleur.rechercher_produits(produits)
 
-    
     def actualiser_affichage(self):
         """Actualise l'affichage après un import"""
         self.dessiner_grille()
