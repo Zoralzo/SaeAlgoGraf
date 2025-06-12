@@ -131,3 +131,46 @@ class ModeleDonnees:
         except Exception as e:
             print(f"Erreur lors du chargement des positions : {e}")
             return False
+
+    def get_categories(self):
+        """Retourne la liste des catégories uniques"""
+        categories = set()
+        for produit in self.produits:
+            if "categorie" in produit:
+                categories.add(produit["categorie"])
+        return sorted(categories)
+
+    def get_produits_par_categorie(self, categorie):
+        """Retourne les produits d'une catégorie spécifique"""
+        return [p["id"] for p in self.produits if p.get("categorie") == categorie]
+
+    def ajouter_position(self, produit_id, x, y):
+        """Alias pour ajouter_produit_position"""
+        return self.ajouter_produit_position(produit_id, x, y)
+
+    def charger_magasin(self, data):
+        """Charge les données du magasin depuis un dictionnaire"""
+        try:
+            if "positions" in data:
+                self.positions = data["positions"]
+                return True
+            return False
+        except Exception as e:
+            print(f"Erreur lors du chargement du magasin : {e}")
+            return False
+
+    def get_produits_coordonne(self, x, y):
+        """Retourne les produits à une coordonnée donnée"""
+        return [pos["id"] for pos in self.positions if pos["x"] == x and pos["y"] == y]
+
+    def supprimer_produit_coordonne(self, produit_id, x, y):
+        """Supprime un produit à une position spécifique"""
+        for pos in self.positions[:]:
+            if pos["id"] == produit_id and pos["x"] == x and pos["y"] == y:
+                self.positions.remove(pos)
+                return True
+        return False
+
+    def vider_case(self, x, y):
+        """Vide une case de tous ses produits"""
+        self.positions = [pos for pos in self.positions if not (pos["x"] == x and pos["y"] == y)]

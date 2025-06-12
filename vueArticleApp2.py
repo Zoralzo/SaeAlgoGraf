@@ -111,3 +111,12 @@ class vueArticle(QWidget):
         produits = [p.strip().lower() for p in texte.split(",") if p.strip()]
         if produits:
             self.controleur.rechercher_produits(produits)
+
+    
+    def actualiser_affichage(self):
+        """Actualise l'affichage après un import"""
+        self.dessiner_grille()
+        if self.plan_item:
+            self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        else:
+            print("Aucun plan à afficher.")
