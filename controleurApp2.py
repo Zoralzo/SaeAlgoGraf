@@ -1,16 +1,16 @@
 from PyQt6.QtWidgets import QInputDialog, QMessageBox
 import sys
 from PyQt6.QtWidgets import QApplication
-from ModeleDonneesApp2 import ModeleDonnees
+from ModeleDonneesApp2 import ModeleDonnees, trouver_plus_court_chemin
 from vueArticleApp2 import vueArticle
 from PyQt6.QtWidgets import QFileDialog
-import json
-from ModeleDonneesApp2 import trouver_plus_court_chemin
+
 
 class Controleur:
     def __init__(self, modele):
         self.modele = modele
         self.vue = None  # Ajout d'une référence à la vue
+        self.charger_positions_par_defaut("produits_positions.json")
 
     def set_vue(self, vue):
         self.vue = vue
@@ -59,15 +59,8 @@ class Controleur:
     def est_position_valide(self, x, y):
         return self.modele.est_position_valide(x, y)
     
-    def importer_magasin_json(self):
-        if not self.vue:
-            QMessageBox.critical(None, "Erreur", "Vue non initialisée")
-            return
-
-        chemin_fichier, _ = QFileDialog.getOpenFileName(self.vue, "Importer fichier JSON", "", "Fichiers JSON (*.json)")
-        if not chemin_fichier:
-            return
-
+    def charger_positions_par_defaut(self, chemin_fichier):
+        import json
         try:
             with open(chemin_fichier, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -79,11 +72,11 @@ class Controleur:
                 if produit and isinstance(x, int) and isinstance(y, int):
                     self.modele.ajouter_position(produit, x, y)
 
-            QMessageBox.information(self.vue, "Import réussi", "Les produits ont été importés et placés sur la grille.")
-            self.vue.actualiser_affichage()
-
+            print(f"{len(data)} produits chargés depuis {chemin_fichier}.")
+        except FileNotFoundError:
+            print(f"Fichier {chemin_fichier} non trouvé. Aucun produit chargé.")
         except Exception as e:
-            QMessageBox.critical(self.vue, "Erreur import", f"Erreur lors de l'import du fichier JSON :\n{e}")
+            print(f"Erreur lors du chargement initial des positions : {e}")
 
         
     def importer_liste_txt(self):
@@ -111,29 +104,58 @@ class Controleur:
         except Exception as e:
             QMessageBox.critical(self.vue, "Erreur import", f"Erreur lors de l'import du fichier texte :\n{e}")
 
+
     def rechercher_produits(self, produits):
-        """Recherche les produits dans le modèle et affiche leurs positions"""
+        """Recherche les produits dans le modèle et affiche leurs positions + le chemin"""
         if not produits:
             QMessageBox.warning(self.vue, "Avertissement", "Aucun produit à rechercher.")
             return
 
         resultats = []
+        positions = []
+
         for produit in produits:
-            # Recherche dans les positions existantes
             for pos in self.modele.positions:
                 if pos["id"].lower() == produit.lower():
                     resultats.append(f"{pos['id']} trouvé en ({pos['x']}, {pos['y']})")
-            
-            # Si non trouvé, vérifier si le produit existe dans le catalogue
-            produit_existe = any(p["id"].lower() == produit.lower() for p in self.modele.produits)
-            if not produit_existe:
-                resultats.append(f"{produit} non trouvé dans le catalogue")
+                    positions.append((pos["x"], pos["y"]))
+                    break
 
         if resultats:
             message = "\n".join(resultats)
             QMessageBox.information(self.vue, "Résultats de recherche", message)
+            self.rechercher_chemin_produits(positions)
         else:
             QMessageBox.information(self.vue, "Résultats", "Aucun produit trouvé.")
+
+    
+    def rechercher_chemin_produits(self, positions_produits):
+        depart = (45, 42)
+        arrivees = [(15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
+                    (25, 42), (27, 42), (29, 42), (31, 42), (32, 42),
+                    (34, 42), (36, 42), (37, 42)]
+
+        if not positions_produits:
+            return
+
+        obstacles = self.modele.get_obstacles()
+        chemin_total = []
+        position_actuelle = depart
+
+        for destination in positions_produits:
+            sous_chemin = trouver_plus_court_chemin(position_actuelle, {destination}, obstacles)
+            if sous_chemin:
+                chemin_total.extend(sous_chemin[1:])  # éviter de répéter le dernier point
+                position_actuelle = destination
+            else:
+                print(f"Pas de chemin possible vers {destination}")
+
+        if chemin_total:
+            self.vue.afficher_chemin(chemin_total)
+        else:
+            QMessageBox.warning(self.vue, "Chemin impossible", "Aucun chemin n’a pu être trouvé.")
+
+   
     
     def rechercher_positions_libres(self):
         positions_libres = self.modele.rechercher_positions_possibles()
@@ -142,27 +164,10 @@ class Controleur:
             QMessageBox.information(self.vue, "Positions libres", f"Positions disponibles :\n{message}")
         else:
             QMessageBox.information(self.vue, "Positions libres", "Aucune position libre disponible.")
+
+
             
 
-
-    def rechercher_produits(self, liste_produits):
-        depart = (45, 42)
-        arrivees = [(15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
-                    (25, 42), (27, 42), (29, 42), (31, 42), (32, 42),
-                    (34, 42), (36, 42), (37, 42)]
-
-        # Exemple : liste des obstacles à éviter (produits placés hors chemin par exemple)
-        obstacles = set()
-
-        chemin = trouver_plus_court_chemin(depart, set(arrivees), obstacles)
-
-        if chemin:
-            self.vue.afficher_chemin(chemin)
-        else:
-            print("Aucun chemin trouvé.")
-
-            
-    
 
 
 if __name__ == '__main__':

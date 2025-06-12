@@ -198,6 +198,36 @@ class ModeleDonnees:
 
         return None  # Aucune position libre trouvée
 
+        
+
+        
+    def bouton_recherche_clicked(self):
+        nom_recherche = self.vue.get_texte_recherche()  # Méthode de la vue à définir
+        resultat = self.modele.rechercher_emplacement_libre(nom_recherche)
+
+        if resultat is not None:
+            produit_id, x, y = resultat
+            self.modele.positions.append((produit_id, x, y))
+            self.vue.ajouter_article(produit_id, x, y)  # Affiche le produit sur la grille
+            self.vue.afficher_message(f"{nom_recherche} ajouté en ({x},{y})")
+        else:
+            self.vue.afficher_message("Produit introuvable ou plus de place.")
+                    
+    def rechercher_positions_possibles(self):
+        positions_occupees = [(pos["x"], pos["y"]) for pos in self.positions]
+        return [p for p in self.positions_valides if p not in positions_occupees]
+    
+    def get_obstacles(self):
+        obstacles = {
+            (10, 10), (11, 10), (12, 10),  # exemple de mur horizontal
+            (15, 20), (15, 21), (15, 22)   # exemple de mur vertical
+        }
+        return obstacles
+
+
+
+
+
 def trouver_plus_court_chemin(depart, arrivees, obstacles=set()):
     """
     Trouve le plus court chemin depuis `depart` vers un des points de `arrivees`.
@@ -218,18 +248,7 @@ def trouver_plus_court_chemin(depart, arrivees, obstacles=set()):
             if voisin not in vus and voisin not in obstacles:
                 vus.add(voisin)
                 queue.append((voisin, chemin + [(x, y)]))
+                
+                
     
     return None  # Aucun chemin trouvé
-
-    
-def bouton_recherche_clicked(self):
-        nom_recherche = self.vue.get_texte_recherche()  # Méthode de la vue à définir
-        resultat = self.modele.rechercher_emplacement_libre(nom_recherche)
-
-        if resultat is not None:
-            produit_id, x, y = resultat
-            self.modele.positions.append((produit_id, x, y))
-            self.vue.ajouter_article(produit_id, x, y)  # Affiche le produit sur la grille
-            self.vue.afficher_message(f"{nom_recherche} ajouté en ({x},{y})")
-        else:
-            self.vue.afficher_message("Produit introuvable ou plus de place.")
