@@ -4,7 +4,8 @@ from PyQt6.QtWidgets import QApplication
 from ModeleDonneesApp2 import *
 from vueArticleApp2 import vueArticle
 from PyQt6.QtWidgets import QFileDialog
-from collections import deque
+import heapq  
+
 
 
 
@@ -131,8 +132,50 @@ class Controleur:
         return None
 
 
+    def creer_graphe_depuis_cases(self, cases):
+        graphe = {}
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        for case in cases:
+            graphe[case] = {}
+            for dx, dy in directions:
+                voisin = (case[0] + dx, case[1] + dy)
+                if voisin in cases:
+                    graphe[case][voisin] = 1  # poids = 1 par défaut
+        return graphe
+    
+    def dijkstra(self, graphe, depart, arrivee):
+        distances = {node: float('inf') for node in graphe}
+        distances[depart] = 0
+        precedent = {}
+        file = [(0, depart)]
+
+        while file:
+            dist_actuelle, noeud = heapq.heappop(file)
+
+            if noeud == arrivee:
+                break
+
+            for voisin, poids in graphe[noeud].items():
+                distance = dist_actuelle + poids
+                if distance < distances[voisin]:
+                    distances[voisin] = distance
+                    precedent[voisin] = noeud
+                    heapq.heappush(file, (distance, voisin))
+
+        # Reconstruction du chemin
+        chemin = []
+        courant = arrivee
+        while courant in precedent:
+            chemin.insert(0, courant)
+            courant = precedent[courant]
+        if chemin:
+            chemin.insert(0, depart)
+        return chemin
 
 
+
+    
     def rechercher_chemin_produits(self, positions_produits):
         depart = (45, 42)
         arrivees = [(15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
@@ -143,37 +186,36 @@ class Controleur:
             return
 
         chemin_dispo = self.get_chemin_dispo(self.modele.caseUiliser())
-
-
+        graphe = self.creer_graphe_depuis_cases(set(chemin_dispo))
 
         chemin_total = []
         position_actuelle = depart
-        cases_utilisées = set()
+        cases_utilisees = set()
 
         for destination in positions_produits:
-            chemin = self.trouver_plus_court_chemin_contraint(
-                position_actuelle,
-                {destination},
-                set(chemin_dispo) - set(cases_utilisées)
-            )
+            chemin = self.dijkstra(graphe, position_actuelle, destination)
             if chemin:
-                chemin_total.extend(chemin[1:])  # éviter de répéter le dernier point
+                chemin_total.extend(chemin[1:])  # On évite de dupliquer
                 position_actuelle = destination
-                cases_utilisées.update(chemin)
+                cases_utilisees.update(chemin)
             else:
                 print(f"Pas de chemin possible vers {destination}")
 
-        # Aller à une des 14 arrivées
-        chemin_final = self.trouver_plus_court_chemin_contraint(position_actuelle, set(arrivees), set(chemin_dispo) - set(cases_utilisées))
+        # Aller vers une arrivée
+        meilleur_chemin_final = None
+        for arrivée in arrivees:
+            chemin_final = self.dijkstra(graphe, position_actuelle, arrivée)
+            if chemin_final and (meilleur_chemin_final is None or len(chemin_final) < len(meilleur_chemin_final)):
+                meilleur_chemin_final = chemin_final
 
-
-        if chemin_final:
-            chemin_total.extend(chemin_final[1:])
+        if meilleur_chemin_final:
+            chemin_total.extend(meilleur_chemin_final[1:])
             self.vue.afficher_chemin(chemin_total)
         else:
             QMessageBox.warning(self.vue, "Chemin impossible", "Aucune arrivée valide atteignable.")
 
-    
+
+        
     def rechercher_produits(self, produits):
         """Recherche les produits dans le modèle et affiche leurs positions + le chemin"""
         if not produits:
@@ -193,11 +235,11 @@ class Controleur:
         if resultats:
             message = "\n".join(resultats)
             QMessageBox.information(self.vue, "Résultats de recherche", message)
-            self.rechercher_chemin_produits(positions)
+            self.rechercher_chemin_produits(positions)  # Utilise la nouvelle version
         else:
             QMessageBox.information(self.vue, "Résultats", "Aucun produit trouvé.")
-   
-    
+        
+        
     def rechercher_positions_libres(self):
         positions_libres = self.modele.rechercher_positions_possibles()
         if positions_libres:

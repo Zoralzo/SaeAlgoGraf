@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap, QFont, QPen, QColor
 from PyQt6.QtCore import Qt, QRectF
+from collections import deque
 
 class vueArticle(QWidget):
     def __init__(self, controleur):
@@ -115,15 +116,85 @@ class vueArticle(QWidget):
         else:
             print("Aucun plan à afficher.")
 
+
     def afficher_chemin(self, chemin):
         self.dessiner_grille()
-        for x, y in chemin:
+
+        if not chemin:
+            return
+
+        # Départ (bleu)
+        depart = chemin[0]
+        rect = self.scene.addRect(
+            depart[0] * self.taille_cellule,
+            depart[1] * self.taille_cellule,
+            self.taille_cellule,
+            self.taille_cellule,
+            QPen(QColor("blue"), 2)
+        )
+        rect.setBrush(QColor(0, 0, 255, 150))
+
+        # Chemin intermédiaire (dégradé jaune -> vert)
+        nb_etapes = len(chemin)
+        for i, (x, y) in enumerate(chemin[1:-1], start=1):
+            ratio = i / nb_etapes
+            rouge = int(255 * (1 - ratio))
+            vert = int(255 * ratio)
+            couleur = QColor(rouge, vert, 0, 180)
+
             rect = self.scene.addRect(
                 x * self.taille_cellule,
                 y * self.taille_cellule,
                 self.taille_cellule,
                 self.taille_cellule,
-                QPen(QColor("green")),
+                QPen(Qt.GlobalColor.transparent)
             )
-            rect.setBrush(QColor(144, 238, 144, 150))  # Vert clair transparent
+            rect.setBrush(couleur)
+
+            # Numéro d’étape (facultatif mais sympa)
+            texte = self.scene.addText(str(i))
+            texte.setDefaultTextColor(Qt.GlobalColor.black)
+            texte.setFont(QFont("Arial", 8))
+            texte.setPos(x * self.taille_cellule + 5, y * self.taille_cellule + 5)
+
+        # Arrivée (rouge)
+        arrivee = chemin[-1]
+        rect = self.scene.addRect(
+            arrivee[0] * self.taille_cellule,
+            arrivee[1] * self.taille_cellule,
+            self.taille_cellule,
+            self.taille_cellule,
+            QPen(QColor("red"), 2)
+        )
+        rect.setBrush(QColor(255, 0, 0, 150))
+
+
+    def rechercher_chemin_produits(self, produits):
+        depart = self.get_coord_depart()  # (x, y)
+        arrivees = self.get_coord_arrivees()  # Liste de 14 coordonnées possibles
+        accessibles = set(self.get_chemin_dispo())  # Toutes les cases autorisées
+
+        # Fonction de voisinage (haut, bas, gauche, droite)
+        def voisins(coord):
+            x, y = coord
+            directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+            return [(x + dx, y + dy) for dx, dy in directions if (x + dx, y + dy) in accessibles]
+
+        visited = set()
+        queue = deque([(depart, [depart])])
+        visited.add(depart)
+
+        while queue:
+            courant, chemin = queue.popleft()
+
+            if courant in arrivees:
+                self.vue.afficher_chemin(chemin)
+                return
+
+            for voisin in voisins(courant):
+                if voisin not in visited:
+                    visited.add(voisin)
+                    queue.append((voisin, chemin + [voisin]))
+
+        print("Aucun chemin trouvé.")
 
