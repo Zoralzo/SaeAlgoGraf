@@ -4,4 +4,20 @@
         "x": 4,
         "y": 1
     }
+    ,
+    {
+        "produit": "Carotte",
+        "x": 2,
+        "y": 3
+    },
+    {
+        "produit": "Tomate",
+        "x": 5,
+        "y": 2
+    },
+    {
+        "produit": "Pomme de terre",
+        "x": 1,
+        "y": 4
+    }
 ]
