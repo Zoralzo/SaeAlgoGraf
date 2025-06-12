@@ -217,38 +217,8 @@ class ModeleDonnees:
         positions_occupees = [(pos["x"], pos["y"]) for pos in self.positions]
         return [p for p in self.positions_valides if p not in positions_occupees]
     
-    def get_obstacles(self):
-        obstacles = {
-            (10, 10), (11, 10), (12, 10),  # exemple de mur horizontal
-            (15, 20), (15, 21), (15, 22)   # exemple de mur vertical
-        }
-        return obstacles
-
-
-
-
-
-def trouver_plus_court_chemin(depart, arrivees, obstacles=set()):
-    """
-    Trouve le plus court chemin depuis `depart` vers un des points de `arrivees`.
-    `obstacles` est un ensemble de positions interdites (x, y).
-    Retourne le chemin sous forme de liste de tuples (x, y).
-    """
-    queue = deque([(depart, [])])
-    vus = set([depart])
-
-    while queue:
-        (x, y), chemin = queue.popleft()
-        if (x, y) in arrivees:
-            return chemin + [(x, y)]
-
-        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
-            nx, ny = x + dx, y + dy
-            voisin = (nx, ny)
-            if voisin not in vus and voisin not in obstacles:
-                vus.add(voisin)
-                queue.append((voisin, chemin + [(x, y)]))
-                
+   
+    def caseUiliser(self):
+        return self.positions_valides
                 
     
-    return None  # Aucun chemin trouvé
