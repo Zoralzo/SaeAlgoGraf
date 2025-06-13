@@ -226,6 +226,13 @@ class ModeleDonnees:
     
    
     def caseUiliser(self):
-        return self.positions_valides
+        nb_lignes = 46
+        nb_colonnes = 61
+        cordonnees_valides = self.positions_valides
+        ensemble_valides = set(cordonnees_valides)
+        ensemble_complet = set((i, j) for i in range(nb_lignes) for j in range(nb_colonnes))
+        coordonnees_manquantes = ensemble_complet - ensemble_valides
+        
+        return coordonnees_manquantes
                 
     

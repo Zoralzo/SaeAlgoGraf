@@ -132,22 +132,23 @@ class Controleur:
         return None
 
 
-    def creer_graphe_depuis_cases(self, cases_disponibles):
-        cases_set = set(cases_disponibles)
-
+    def creer_graphe_depuis_cases(self, cases, destinations=[]):
         graphe = {}
-        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        cases_set = set(cases)
+        destinations_set = set(destinations)
 
-        for case in cases_set:
+        for (x, y) in cases.union(destinations_set):  # Important : inclure les destinations !
             voisins = []
-            x, y = case
-            for dx, dy in directions:
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                 voisin = (x + dx, y + dy)
-                if voisin in cases_set:
+                if voisin in cases_set or voisin in destinations_set:
                     voisins.append(voisin)
-            graphe[case] = voisins
+            graphe[(x, y)] = voisins
 
         return graphe
+
+
+
 
 
 
@@ -178,7 +179,7 @@ class Controleur:
 
 
     def rechercher_chemin_produits(self, positions_produits):
-        depart = (45, 42)
+        depart = (45, 41)
         arrivees = [(15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
                     (25, 42), (27, 42), (29, 42), (31, 42), (32, 42),
                     (34, 42), (36, 42), (37, 42)]
@@ -187,25 +188,35 @@ class Controleur:
             print("Aucun produit à chercher.")
             return
 
-        chemin_dispo = self.get_chemin_dispo(self.modele.caseUiliser())
-        print(f"Cases disponibles pour chemin : {len(chemin_dispo)}")
-        graphe = self.creer_graphe_depuis_cases(chemin_dispo)  # Pas besoin de set ici, c’est déjà fait dans la fonction
+        # Récupérer les cases disponibles de base
+        chemin_dispo = set(self.modele.caseUiliser())
+
+        # Ajouter les positions essentielles même si elles sont interdites
+        chemin_dispo.add(depart)
+        chemin_dispo.update(positions_produits)
+        chemin_dispo.update(arrivees)
+    
+        # Créer le graphe basé sur les cases disponibles élargies
+        graphe = self.creer_graphe_depuis_cases(
+            set(chemin_dispo),  # tu peux convertir en set pour aller plus vite
+            destinations=positions_produits + arrivees + [depart]
+        )
+
 
         chemin_total = []
         position_actuelle = depart
         cases_utilisees = set()
 
         for destination in positions_produits:
-            print(f"Recherche chemin vers {destination} depuis {position_actuelle}")
             chemin = self.bfs(graphe, position_actuelle, destination)
-            print(f"Chemin trouvé : {chemin}")
             if chemin:
-                chemin_total.extend(chemin[1:])  # Évite la redondance de position
+                chemin_total.extend(chemin[1:])
                 position_actuelle = destination
                 cases_utilisees.update(chemin)
             else:
                 print(f"Pas de chemin possible vers {destination}")
 
+        # Trouver la meilleure arrivée atteignable
         meilleur_chemin_final = None
         for arrivee in arrivees:
             chemin_final = self.bfs(graphe, position_actuelle, arrivee)
@@ -218,7 +229,6 @@ class Controleur:
         else:
             print("Aucune arrivée valide atteignable.")
             QMessageBox.warning(self.vue, "Chemin impossible", "Aucune arrivée valide atteignable.")
-
 
 
 
@@ -255,9 +265,6 @@ class Controleur:
         else:
             QMessageBox.information(self.vue, "Positions libres", "Aucune position libre disponible.")
 
-
-    def get_chemin_dispo(self, cases_valides):
-        return cases_valides  # Plus de soustraction inutile
 
 
  
