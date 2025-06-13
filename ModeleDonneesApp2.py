@@ -217,6 +217,13 @@ class ModeleDonnees:
         positions_occupees = [(pos["x"], pos["y"]) for pos in self.positions]
         return [p for p in self.positions_valides if p not in positions_occupees]
     
+    def get_id_par_nom(self, nom):
+        for produit in self.produits:
+            if produit.get("nom", "").lower().strip() == nom.lower().strip():
+                return produit.get("id")
+        return None
+
+    
    
     def caseUiliser(self):
         return self.positions_valides

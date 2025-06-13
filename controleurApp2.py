@@ -256,13 +256,9 @@ class Controleur:
             QMessageBox.information(self.vue, "Positions libres", "Aucune position libre disponible.")
 
 
-    def get_chemin_dispo(self, cases_utilisees):
-        chemin_dispo = []
-        for x in range(60):
-            for y in range(45):
-                if (x, y) not in cases_utilisees:
-                    chemin_dispo.append((x, y))
-        return chemin_dispo
+    def get_chemin_dispo(self, cases_valides):
+        return cases_valides  # Plus de soustraction inutile
+
 
  
 

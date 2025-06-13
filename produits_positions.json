@@ -3,10 +3,9 @@
         "produit": "Aubergine",
         "x": 4,
         "y": 1
-    }
-    ,
+    },
     {
-        "produit": "Carotte ",
+        "produit": "Carotte",
         "x": 2,
         "y": 3
     },
