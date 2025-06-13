@@ -165,14 +165,14 @@ class Controleur:
                 while courant:
                     chemin.append(courant)
                     courant = predecesseurs[courant]
-                return chemin[::-1]  # On inverse le chemin
+                return chemin[::-1]
 
-            for voisin in graphe.get(courant, []):  # [] au lieu de {} ici !
+            for voisin in graphe.get(courant, []):
                 if voisin not in predecesseurs:
                     predecesseurs[voisin] = courant
                     file.append(voisin)
 
-        return None  # Aucun chemin trouvé
+        return None
 
 
 
@@ -285,7 +285,7 @@ if __name__ == '__main__':
     modele = ModeleDonnees("annexes/liste_produits.json")
     controleur = Controleur(modele)
     fenetre = vueArticle(controleur)
-    controleur.set_vue(fenetre)  # Lier la vue au contrôleur
+    controleur.set_vue(fenetre)
     fenetre.showFullScreen()
 
     sys.exit(app.exec())

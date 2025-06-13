@@ -178,7 +178,6 @@ class ModeleDonnees:
         self.positions = [pos for pos in self.positions if not (pos["x"] == x and pos["y"] == y)]
         
     def rechercher_emplacement_libre(self, nom_produit):
-        # Trouver le produit correspondant au nom
         produit_id = None
         for p in self.produits:
             if p["nom"].lower() == nom_produit.lower():
@@ -202,7 +201,7 @@ class ModeleDonnees:
 
         
     def bouton_recherche_clicked(self):
-        nom_recherche = self.vue.get_texte_recherche()  # Méthode de la vue à définir
+        nom_recherche = self.vue.get_texte_recherche()
         resultat = self.modele.rechercher_emplacement_libre(nom_recherche)
 
         if resultat is not None:
