@@ -132,50 +132,51 @@ class Controleur:
         return None
 
 
-    def creer_graphe_depuis_cases(self, cases):
-        graphe = {}
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    def creer_graphe_depuis_cases(self, cases_disponibles):
+        cases_set = set(cases_disponibles)
 
-        for case in cases:
-            graphe[case] = {}
+        graphe = {}
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+
+        for case in cases_set:
+            voisins = []
+            x, y = case
             for dx, dy in directions:
-                voisin = (case[0] + dx, case[1] + dy)
-                if voisin in cases:
-                    graphe[case][voisin] = 1  # poids = 1 par défaut
+                voisin = (x + dx, y + dy)
+                if voisin in cases_set:
+                    voisins.append(voisin)
+            graphe[case] = voisins
+
         return graphe
-    
-    def dijkstra(self, graphe, depart, arrivee):
-        distances = {node: float('inf') for node in graphe}
-        distances[depart] = 0
-        precedent = {}
-        file = [(0, depart)]
+
+
+
+            
+    def bfs(self, graphe, depart, arrivee):
+        from collections import deque
+        file = deque([depart])
+        predecesseurs = {depart: None}
 
         while file:
-            dist_actuelle, noeud = heapq.heappop(file)
+            courant = file.popleft()
+            if courant == arrivee:
+                chemin = []
+                while courant:
+                    chemin.append(courant)
+                    courant = predecesseurs[courant]
+                return chemin[::-1]  # On inverse le chemin
 
-            if noeud == arrivee:
-                break
+            for voisin in graphe.get(courant, []):  # [] au lieu de {} ici !
+                if voisin not in predecesseurs:
+                    predecesseurs[voisin] = courant
+                    file.append(voisin)
 
-            for voisin, poids in graphe[noeud].items():
-                distance = dist_actuelle + poids
-                if distance < distances[voisin]:
-                    distances[voisin] = distance
-                    precedent[voisin] = noeud
-                    heapq.heappush(file, (distance, voisin))
-
-        # Reconstruction du chemin
-        chemin = []
-        courant = arrivee
-        while courant in precedent:
-            chemin.insert(0, courant)
-            courant = precedent[courant]
-        if chemin:
-            chemin.insert(0, depart)
-        return chemin
+        return None  # Aucun chemin trouvé
 
 
 
-    
+
+
     def rechercher_chemin_produits(self, positions_produits):
         depart = (45, 42)
         arrivees = [(15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
@@ -183,28 +184,31 @@ class Controleur:
                     (34, 42), (36, 42), (37, 42)]
 
         if not positions_produits:
+            print("Aucun produit à chercher.")
             return
 
         chemin_dispo = self.get_chemin_dispo(self.modele.caseUiliser())
-        graphe = self.creer_graphe_depuis_cases(set(chemin_dispo))
+        print(f"Cases disponibles pour chemin : {len(chemin_dispo)}")
+        graphe = self.creer_graphe_depuis_cases(chemin_dispo)  # Pas besoin de set ici, c’est déjà fait dans la fonction
 
         chemin_total = []
         position_actuelle = depart
         cases_utilisees = set()
 
         for destination in positions_produits:
-            chemin = self.dijkstra(graphe, position_actuelle, destination)
+            print(f"Recherche chemin vers {destination} depuis {position_actuelle}")
+            chemin = self.bfs(graphe, position_actuelle, destination)
+            print(f"Chemin trouvé : {chemin}")
             if chemin:
-                chemin_total.extend(chemin[1:])  # On évite de dupliquer
+                chemin_total.extend(chemin[1:])  # Évite la redondance de position
                 position_actuelle = destination
                 cases_utilisees.update(chemin)
             else:
                 print(f"Pas de chemin possible vers {destination}")
 
-        # Aller vers une arrivée
         meilleur_chemin_final = None
-        for arrivée in arrivees:
-            chemin_final = self.dijkstra(graphe, position_actuelle, arrivée)
+        for arrivee in arrivees:
+            chemin_final = self.bfs(graphe, position_actuelle, arrivee)
             if chemin_final and (meilleur_chemin_final is None or len(chemin_final) < len(meilleur_chemin_final)):
                 meilleur_chemin_final = chemin_final
 
@@ -212,7 +216,10 @@ class Controleur:
             chemin_total.extend(meilleur_chemin_final[1:])
             self.vue.afficher_chemin(chemin_total)
         else:
+            print("Aucune arrivée valide atteignable.")
             QMessageBox.warning(self.vue, "Chemin impossible", "Aucune arrivée valide atteignable.")
+
+
 
 
         
@@ -249,19 +256,15 @@ class Controleur:
             QMessageBox.information(self.vue, "Positions libres", "Aucune position libre disponible.")
 
 
-
     def get_chemin_dispo(self, cases_utilisees):
-        """Retourne les cases disponibles pour le cheminement"""
-        chemin_dispo = self.modele.caseUiliser()
-        for x in range(0, 50):
-            for y in range(0, 50):
+        chemin_dispo = []
+        for x in range(60):
+            for y in range(45):
                 if (x, y) not in cases_utilisees:
                     chemin_dispo.append((x, y))
         return chemin_dispo
 
-
  
-
 
 
 if __name__ == '__main__':
@@ -274,3 +277,5 @@ if __name__ == '__main__':
     fenetre.showFullScreen()
 
     sys.exit(app.exec())
+    
+   
