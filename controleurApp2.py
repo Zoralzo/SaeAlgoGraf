@@ -180,46 +180,54 @@ class Controleur:
 
     def rechercher_chemin_produits(self, positions_produits):
         depart = (45, 41)
-        arrivees = [(15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
-                    (25, 42), (27, 42), (29, 42), (31, 42), (32, 42),
-                    (34, 42), (36, 42), (37, 42)]
+        arrivees = [
+            (15, 42), (17, 42), (19, 42), (20, 42), (22, 42),
+                (25, 42), (27, 42), (29, 42), (31, 42), (32, 42),
+                (34, 42), (36, 42), (37, 42),(40,42),(41,42) ,
+            (15, 41), (17, 41), (19, 41),(20, 41), (22, 41), (25, 41), 
+                (27, 41), (29, 41), (31, 41),(32, 41), (34, 41), (36, 41), (37, 41), (40,41),(41,41), 
+            (15, 40), (17, 40),(19, 40), (20, 40), (22, 40), (25, 40), (27, 40), (29, 40),
+                (31, 40), (32, 40), (34, 40), (36, 40), (37, 40), (40,40),(41,40) ,
+            (15, 39),(17, 39), (19, 39), (20, 39), (22, 39), (25, 39), (27, 39),
+                (29, 39), (31, 39), (32, 39), (34, 39), (36, 39), (37, 39),(40,39),(41,39) 
+        ]
 
         if not positions_produits:
             print("Aucun produit à chercher.")
             return
 
-        # Récupérer les cases disponibles de base
+        # Étape 1 : construire le graphe sans les arrivées
         chemin_dispo = set(self.modele.caseUiliser())
-
-        # Ajouter les positions essentielles même si elles sont interdites
         chemin_dispo.add(depart)
         chemin_dispo.update(positions_produits)
-        chemin_dispo.update(arrivees)
-    
-        # Créer le graphe basé sur les cases disponibles élargies
-        graphe = self.creer_graphe_depuis_cases(
-            set(chemin_dispo),  # tu peux convertir en set pour aller plus vite
-            destinations=positions_produits + arrivees + [depart]
+        
+        graphe_sans_arrivees = self.creer_graphe_depuis_cases(
+            chemin_dispo,
+            destinations=positions_produits + [depart]
         )
-
 
         chemin_total = []
         position_actuelle = depart
-        cases_utilisees = set()
 
         for destination in positions_produits:
-            chemin = self.bfs(graphe, position_actuelle, destination)
+            chemin = self.bfs(graphe_sans_arrivees, position_actuelle, destination)
             if chemin:
                 chemin_total.extend(chemin[1:])
                 position_actuelle = destination
-                cases_utilisees.update(chemin)
             else:
                 print(f"Pas de chemin possible vers {destination}")
 
-        # Trouver la meilleure arrivée atteignable
+        # Étape 2 : maintenant, on ajoute les arrivées au graphe
+        chemin_dispo.update(arrivees)
+        graphe_complet = self.creer_graphe_depuis_cases(
+            chemin_dispo,
+            destinations=arrivees + [position_actuelle]
+        )
+
+        # Trouver la meilleure arrivée
         meilleur_chemin_final = None
         for arrivee in arrivees:
-            chemin_final = self.bfs(graphe, position_actuelle, arrivee)
+            chemin_final = self.bfs(graphe_complet, position_actuelle, arrivee)
             if chemin_final and (meilleur_chemin_final is None or len(chemin_final) < len(meilleur_chemin_final)):
                 meilleur_chemin_final = chemin_final
 
@@ -229,6 +237,7 @@ class Controleur:
         else:
             print("Aucune arrivée valide atteignable.")
             QMessageBox.warning(self.vue, "Chemin impossible", "Aucune arrivée valide atteignable.")
+
 
 
 
